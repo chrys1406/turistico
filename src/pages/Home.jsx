@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { getDestinos, getRutas } from "../services/api";
 
-import mirador from "../assets/fondo/mirador.png";
+import mirador from "../assets/fondo/Mirador.png";
 import teleferico from "../assets/fondo/teleferico.jpg";
 import feria from "../assets/fondo/feria.jpeg";
 import valle from "../assets/fondo/valle-de-la-luna.jpg";

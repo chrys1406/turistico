@@ -1,5 +1,12 @@
 import { useEffect, useState, useRef } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Popup,
+  useMap,
+  useMapEvents,
+} from "react-leaflet";
 import {
   MapPin,
   Layers,
@@ -26,6 +33,33 @@ L.Icon.Default.mergeOptions({
   shadowUrl:
     "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
 });
+
+const crearIconoServicio = (tipo) => {
+  const colores = {
+    hotel: "#3b82f6",
+    restaurante: "#f59e0b",
+    farmacia: "#10b981",
+  };
+  const emojis = { hotel: "🏨", restaurante: "🍽️", farmacia: "💊" };
+  const color = colores[tipo] || "#64748b";
+  return L.divIcon({
+    className: "",
+    html: `
+      <div style="
+        width:30px; height:30px;
+        background:${color};
+        border:2px solid white;
+        border-radius:50%;
+        display:flex; align-items:center; justify-content:center;
+        font-size:13px;
+        box-shadow:0 2px 8px rgba(0,0,0,0.25);
+      ">${emojis[tipo] || "📍"}</div>
+    `,
+    iconSize: [30, 30],
+    iconAnchor: [15, 15],
+    popupAnchor: [0, -18],
+  });
+};
 
 const crearIcono = (color) =>
   L.divIcon({
@@ -190,6 +224,14 @@ function ControlRuta({ origen, destino, onListo }) {
 
   return null;
 }
+// Captura el centro actual del mapa
+function CapturaCentro({ onChange }) {
+  useMapEvents({
+    moveend: (e) => onChange(e.target.getCenter()),
+    zoomend: (e) => onChange(e.target.getCenter()),
+  });
+  return null;
+}
 
 export default function Mapa() {
   const [capaActiva, setCapaActiva] = useState("osm");
@@ -203,6 +245,11 @@ export default function Mapa() {
   const [destinos, setDestinos] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
+  const [panelServicios, setPanelServicios] = useState(false);
+  const [categoriaServicio, setCategoriaServicio] = useState(null);
+  const [radioServicio, setRadioServicio] = useState(1000);
+  const [serviciosOverpass, setServiciosOverpass] = useState([]);
+  const [cargandoServicios, setCargandoServicios] = useState(false);
 
   // Estados de routing
   const [origenRuta, setOrigenRuta] = useState(null);
@@ -259,6 +306,146 @@ export default function Mapa() {
     setInfoRuta(null);
     setTimeout(() => setCalculandoRuta(false), 3000);
   };
+  const SERVICIOS_OVERPASS = [
+    {
+      id: "restaurante",
+      label: "Restaurantes",
+      emoji: "🍽️",
+      tag: "amenity=restaurant",
+      color: "#f59e0b",
+    },
+    {
+      id: "hotel",
+      label: "Hoteles",
+      emoji: "🏨",
+      tag: "tourism=hotel",
+      color: "#3b82f6",
+    },
+    {
+      id: "farmacia",
+      label: "Farmacias",
+      emoji: "💊",
+      tag: "amenity=pharmacy",
+      color: "#10b981",
+    },
+    {
+      id: "hospital",
+      label: "Hospitales",
+      emoji: "🏥",
+      tag: "amenity=hospital",
+      color: "#ef4444",
+    },
+    {
+      id: "cafe",
+      label: "Cafés",
+      emoji: "☕",
+      tag: "amenity=cafe",
+      color: "#a16207",
+    },
+    {
+      id: "atm",
+      label: "Cajeros ATM",
+      emoji: "🏧",
+      tag: "amenity=atm",
+      color: "#8b5cf6",
+    },
+    {
+      id: "gasolinera",
+      label: "Gasolineras",
+      emoji: "⛽",
+      tag: "amenity=fuel",
+      color: "#64748b",
+    },
+  ];
+
+  const [centroCandidato, setCentroCandidato] = useState(null);
+  const [elevacionDestino, setElevacionDestino] = useState(null);
+  const [cargandoElevacion, setCargandoElevacion] = useState(false);
+  const [climaDestino, setClimaDestino] = useState(null);
+
+  const buscarServiciosOverpass = async (cat, centro, radio) => {
+    if (!centro) return;
+    setCargandoServicios(true);
+    setServiciosOverpass([]);
+    const [key, value] = cat.tag.split("=");
+    const query = `
+    [out:json][timeout:25];
+    node["${key}"="${value}"](around:${radio},${centro[0]},${centro[1]});
+    out body;
+  `;
+    try {
+      const res = await fetch("https://overpass-api.de/api/interpreter", {
+        method: "POST",
+        body: query,
+      });
+      const data = await res.json();
+      const resultados = data.elements.map((el) => ({
+        id: el.id,
+        lat: el.lat,
+        lng: el.lon,
+        nombre: el.tags?.name || cat.label.slice(0, -1),
+        tipo: cat.id,
+        emoji: cat.emoji,
+        color: cat.color,
+        direccion: el.tags?.["addr:street"] || "",
+        telefono: el.tags?.phone || "",
+      }));
+      setServiciosOverpass(resultados);
+    } catch {
+      setServiciosOverpass([]);
+    } finally {
+      setCargandoServicios(false);
+    }
+  };
+
+  const activarCategoriaServicio = (cat, centro) => {
+    const centroFinal =
+      centro || centroCandidato
+        ? [centroCandidato?.lat ?? -16.5, centroCandidato?.lng ?? -68.15]
+        : [-16.5, -68.15];
+    setCategoriaServicio(cat.id);
+    setPanelServicios(false);
+    buscarServiciosOverpass(cat, centroFinal, radioServicio);
+  };
+
+  const emojiClima = (code) => {
+    if (code === 0) return "☀️";
+    if (code <= 2) return "⛅";
+    if (code <= 48) return "☁️";
+    if (code <= 67) return "🌧️";
+    if (code <= 77) return "❄️";
+    return "⛈️";
+  };
+
+  const consultarElevacion = async (lat, lng) => {
+    setCargandoElevacion(true);
+    setElevacionDestino(null);
+    setClimaDestino(null);
+    try {
+      const res = await fetch(
+        `https://api.open-elevation.com/api/v1/lookup?locations=${lat},${lng}`,
+      );
+      const data = await res.json();
+      setElevacionDestino(data.results[0].elevation);
+    } catch {
+      setElevacionDestino(null);
+    } finally {
+      setCargandoElevacion(false);
+    }
+  };
+
+  const consultarClima = async (lat, lng) => {
+    setClimaDestino(null);
+    try {
+      const res = await fetch(
+        `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,weathercode&timezone=America%2FLa_Paz`,
+      );
+      const data = await res.json();
+      setClimaDestino(data.current);
+    } catch {
+      setClimaDestino(null);
+    }
+  };
 
   const limpiarRuta = () => {
     setOrigenRuta(null);
@@ -266,6 +453,7 @@ export default function Mapa() {
     setOrigenTexto("");
     setDestinoRutaId("");
     setInfoRuta(null);
+    setElevacionDestino(null);
   };
 
   return (
@@ -403,6 +591,199 @@ export default function Mapa() {
                     {c.label}
                   </button>
                 ))}
+              </div>
+            )}
+          </div>
+
+          {/* Servicios dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => {
+                setPanelServicios(!panelServicios);
+                setPanelCapas(false);
+                setPanelFiltros(false);
+                setPanelRuta(false);
+              }}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all"
+              style={{
+                background: categoriaServicio
+                  ? "#10b981"
+                  : panelServicios
+                    ? "#f59e0b"
+                    : "rgba(255,255,255,0.08)",
+                color: categoriaServicio || panelServicios ? "#fff" : "#94a3b8",
+                border: "1px solid rgba(255,255,255,0.1)",
+              }}
+            >
+              🍔{" "}
+              {categoriaServicio
+                ? SERVICIOS_OVERPASS.find((s) => s.id === categoriaServicio)
+                    ?.label
+                : "Servicios"}
+              {cargandoServicios && (
+                <Loader2 size={11} className="animate-spin ml-1" />
+              )}
+            </button>
+
+            {panelServicios && (
+              <div
+                className="absolute top-full right-0 mt-2 rounded-2xl shadow-2xl z-[1000] overflow-hidden"
+                style={{
+                  background: "#1e293b",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  minWidth: "220px",
+                }}
+              >
+                {/* Radio slider */}
+                <div className="px-4 py-3 border-b border-white/10">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-xs text-slate-400 font-semibold">
+                      Radio de búsqueda
+                    </span>
+                    <span className="text-xs font-bold text-amber-400">
+                      {radioServicio >= 1000
+                        ? `${radioServicio / 1000}km`
+                        : `${radioServicio}m`}
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min={300}
+                    max={3000}
+                    step={100}
+                    value={radioServicio}
+                    onChange={(e) => setRadioServicio(Number(e.target.value))}
+                    className="w-full accent-amber-400"
+                  />
+                  <div className="flex justify-between text-[10px] text-slate-500 mt-0.5">
+                    <span>300m</span>
+                    <span>3km</span>
+                  </div>
+                </div>
+
+                {/* Desde dónde */}
+                <div className="px-4 py-2 border-b border-white/10">
+                  <p className="text-[10px] text-slate-500 font-bold uppercase mb-2">
+                    Buscar cerca de:
+                  </p>
+                  <div className="flex flex-col gap-1">
+                    <button
+                      onClick={() => {
+                        if (ubicacionUser) {
+                          const cat = categoriaServicio
+                            ? SERVICIOS_OVERPASS.find(
+                                (s) => s.id === categoriaServicio,
+                              )
+                            : null;
+                          if (cat)
+                            buscarServiciosOverpass(
+                              cat,
+                              ubicacionUser,
+                              radioServicio,
+                            );
+                        } else geolocalizarme();
+                        setPanelServicios(false);
+                      }}
+                      className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-left transition-all hover:bg-white/10"
+                      style={{ color: ubicacionUser ? "#10b981" : "#94a3b8" }}
+                    >
+                      📍{" "}
+                      {ubicacionUser
+                        ? "Mi ubicación actual"
+                        : "Activar mi ubicación"}
+                    </button>
+                    {destinoSeleccionado && (
+                      <button
+                        onClick={() => {
+                          const cat = categoriaServicio
+                            ? SERVICIOS_OVERPASS.find(
+                                (s) => s.id === categoriaServicio,
+                              )
+                            : null;
+                          const centro = [
+                            destinoSeleccionado.lat,
+                            destinoSeleccionado.lng,
+                          ];
+                          if (cat)
+                            buscarServiciosOverpass(cat, centro, radioServicio);
+                          setPanelServicios(false);
+                        }}
+                        className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-left transition-all hover:bg-white/10"
+                        style={{ color: "#f59e0b" }}
+                      >
+                        📌 Cerca de: {destinoSeleccionado.nombre}
+                      </button>
+                    )}
+                    <button
+                      onClick={() => {
+                        const centro = centroCandidato
+                          ? [centroCandidato.lat, centroCandidato.lng]
+                          : [-16.5, -68.15];
+                        const cat = categoriaServicio
+                          ? SERVICIOS_OVERPASS.find(
+                              (s) => s.id === categoriaServicio,
+                            )
+                          : null;
+                        if (cat)
+                          buscarServiciosOverpass(cat, centro, radioServicio);
+                        setPanelServicios(false);
+                      }}
+                      className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-left transition-all hover:bg-white/10"
+                      style={{ color: "#94a3b8" }}
+                    >
+                      🗺️ Centro del mapa actual
+                    </button>
+                  </div>
+                </div>
+
+                {/* Categorías */}
+                <div className="p-2">
+                  <p className="text-[10px] text-slate-500 font-bold uppercase px-2 mb-1">
+                    Categoría:
+                  </p>
+                  {SERVICIOS_OVERPASS.map((cat) => (
+                    <button
+                      key={cat.id}
+                      onClick={() =>
+                        activarCategoriaServicio(
+                          cat,
+                          ubicacionUser ||
+                            (centroCandidato
+                              ? [centroCandidato.lat, centroCandidato.lng]
+                              : null),
+                        )
+                      }
+                      className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs text-left transition-all"
+                      style={{
+                        background:
+                          categoriaServicio === cat.id
+                            ? `${cat.color}22`
+                            : "transparent",
+                        color:
+                          categoriaServicio === cat.id ? cat.color : "#94a3b8",
+                        fontWeight: categoriaServicio === cat.id ? 700 : 400,
+                      }}
+                    >
+                      <span>{cat.emoji}</span>
+                      <span>{cat.label}</span>
+                      {categoriaServicio === cat.id && (
+                        <span className="ml-auto text-[10px]">✓</span>
+                      )}
+                    </button>
+                  ))}
+                  {categoriaServicio && (
+                    <button
+                      onClick={() => {
+                        setCategoriaServicio(null);
+                        setServiciosOverpass([]);
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2 mt-1 rounded-lg text-xs transition-all hover:bg-white/10"
+                      style={{ color: "#ef4444" }}
+                    >
+                      <X size={11} /> Limpiar servicios
+                    </button>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -699,6 +1080,7 @@ export default function Mapa() {
             zoomControl={false}
           >
             <CambiaCapa url={capa.url} attr={capa.attr} />
+            <CapturaCentro onChange={setCentroCandidato} />
             {volarA && <VolarA coords={volarA} />}
             {/* Click en mapa para definir origen */}
             <ClickEnMapa
@@ -734,6 +1116,8 @@ export default function Mapa() {
                   click: () => {
                     setDestinoSeleccionado(d);
                     if (panelRuta) setDestinoRutaId(String(d.id));
+                    consultarElevacion(d.lat, d.lng);
+                    consultarClima(d.lat, d.lng);
                   },
                 }}
               >
@@ -776,6 +1160,51 @@ export default function Mapa() {
                       <span>⭐ {d.rating}</span>
                       <span>🕐 {d.tiempo_visita}</span>
                     </div>
+                  </div>
+                </Popup>
+              </Marker>
+            ))}
+
+            {/* Marcadores de servicios Overpass */}
+            {serviciosOverpass.map((s) => (
+              <Marker
+                key={`ovp-${s.id}`}
+                position={[s.lat, s.lng]}
+                icon={L.divIcon({
+                  className: "",
+                  html: `<div style="width:30px;height:30px;background:${s.color};border:2px solid white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 2px 8px rgba(0,0,0,0.3);">${s.emoji}</div>`,
+                  iconSize: [30, 30],
+                  iconAnchor: [15, 15],
+                  popupAnchor: [0, -18],
+                })}
+              >
+                <Popup>
+                  <div
+                    style={{
+                      fontFamily: "Inter, sans-serif",
+                      minWidth: "160px",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontWeight: 900,
+                        fontSize: "13px",
+                        color: "#1a1a2e",
+                        marginBottom: "4px",
+                      }}
+                    >
+                      {s.nombre}
+                    </div>
+                    {s.direccion && (
+                      <p style={{ fontSize: "11px", color: "#94a3b8" }}>
+                        📍 {s.direccion}
+                      </p>
+                    )}
+                    {s.telefono && (
+                      <p style={{ fontSize: "11px", color: "#94a3b8" }}>
+                        📞 {s.telefono}
+                      </p>
+                    )}
                   </div>
                 </Popup>
               </Marker>
@@ -898,6 +1327,25 @@ export default function Mapa() {
                   <span className="flex items-center gap-1">
                     <Clock size={11} /> {destinoSeleccionado.tiempo_visita}
                   </span>
+                  <span
+                    className="flex items-center gap-1 font-bold"
+                    style={{ color: "#f59e0b" }}
+                  >
+                    {cargandoElevacion
+                      ? "⛰️ ..."
+                      : elevacionDestino
+                        ? `⛰️ ${elevacionDestino.toLocaleString()} msnm`
+                        : null}
+                  </span>
+                  {climaDestino && (
+                    <span
+                      className="flex items-center gap-1 font-bold"
+                      style={{ color: "#f59e0b" }}
+                    >
+                      {emojiClima(climaDestino.weathercode)}{" "}
+                      {climaDestino.temperature_2m}°C
+                    </span>
+                  )}
                 </div>
                 <div className="flex gap-2">
                   <a

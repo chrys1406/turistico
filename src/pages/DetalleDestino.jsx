@@ -14,7 +14,12 @@ import {
 } from "lucide-react";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
-import { getDestino, getServiciosCercanos, getFotos } from "../services/api";
+import {
+  getDestino,
+  getServiciosCercanos,
+  getFotos,
+  calcularDistancia,
+} from "../services/api";
 import SubirFoto from "../components/SubirFoto";
 
 delete L.Icon.Default.prototype._getIconUrl;
@@ -55,6 +60,9 @@ export default function DetalleDestino() {
   const [error, setError] = useState(null);
   const [servicios, setServicios] = useState([]);
   const [fotos, setFotos] = useState([]);
+  const [distancia, setDistancia] = useState(null);
+  const [elevacion, setElevacion] = useState(null);
+  const [clima, setClima] = useState(null);
 
   useEffect(() => {
     const link = document.createElement("link");
@@ -84,6 +92,39 @@ export default function DetalleDestino() {
       .then((data) => setFotos(data))
       .catch(() => setFotos([]));
   }, [id]);
+
+  useEffect(() => {
+    if (!destino) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        calcularDistancia(pos.coords.latitude, pos.coords.longitude, destino.id)
+          .then((data) => setDistancia(data))
+          .catch(() => setDistancia(null));
+      },
+      () => setDistancia(null),
+    );
+  }, [destino]);
+
+  useEffect(() => {
+    if (!destino) return;
+    fetch(
+      `https://api.open-elevation.com/api/v1/lookup?locations=${destino.lat},${destino.lng}`,
+    )
+      .then((r) => r.json())
+      .then((data) => setElevacion(data.results[0].elevation))
+      .catch(() => setElevacion(null));
+  }, [destino]);
+
+  useEffect(() => {
+    if (!destino) return;
+    fetch(
+      `https://api.open-meteo.com/v1/forecast?latitude=${destino.lat}&longitude=${destino.lng}&current=temperature_2m,weathercode&timezone=America%2FLa_Paz`,
+    )
+      .then((r) => r.json())
+      .then((data) => setClima(data.current))
+      .catch(() => setClima(null));
+  }, [destino]);
+
   if (cargando) {
     return (
       <div
@@ -120,6 +161,15 @@ export default function DetalleDestino() {
       </div>
     );
   }
+
+  const emojiClima = (code) => {
+    if (code === 0) return "☀️";
+    if (code <= 2) return "⛅";
+    if (code <= 48) return "☁️";
+    if (code <= 67) return "🌧️";
+    if (code <= 77) return "❄️";
+    return "⛈️";
+  };
 
   const color = destino.categoria_color || "#f59e0b";
   const coords = [destino.lat, destino.lng];
@@ -231,9 +281,35 @@ export default function DetalleDestino() {
             <span className="flex items-center gap-1">
               <Clock size={13} /> {destino.tiempo_visita}
             </span>
-            <span className="flex items-center gap-1">
-              <Navigation size={13} /> {destino.altitud}
-            </span>
+            {elevacion && (
+              <span
+                className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold"
+                style={{ background: "rgba(255,255,255,0.15)", color: "#fff" }}
+              >
+                ⛰️ {elevacion.toLocaleString()} msnm
+              </span>
+            )}
+
+            {clima && (
+              <span
+                className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold"
+                style={{ background: "rgba(255,255,255,0.15)", color: "#fff" }}
+              >
+                {emojiClima(clima.weathercode)} {clima.temperature_2m}°C
+              </span>
+            )}
+
+            {distancia && (
+              <span
+                className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold"
+                style={{
+                  background: "rgba(245,158,11,0.25)",
+                  color: "#f59e0b",
+                }}
+              >
+                <MapPin size={12} /> {distancia.distancia_km} km de ti
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -435,7 +511,19 @@ export default function DetalleDestino() {
                 { label: "Entrada", valor: destino.entrada },
                 { label: "Horario", valor: destino.horario },
                 { label: "Duración", valor: destino.tiempo_visita },
-                { label: "Altitud", valor: destino.altitud },
+                {
+                  label: "Altitud",
+                  valor: elevacion
+                    ? `${elevacion.toLocaleString()} msnm`
+                    : "Consultando...",
+                },
+
+                {
+                  label: "Clima ahora",
+                  valor: clima
+                    ? `${emojiClima(clima.weathercode)} ${clima.temperature_2m}°C`
+                    : "Consultando...",
+                },
               ].map((item, i) => (
                 <div
                   key={i}

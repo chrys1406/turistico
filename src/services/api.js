@@ -52,3 +52,15 @@ export async function getFotos(destinoId) {
   if (!res.ok) throw new Error('Error al cargar fotos')
   return res.json()
 }
+
+export async function calcularDistancia(lat1, lng1, destinoId) {
+  const res = await fetch(`${API_URL}/distancia?lat1=${lat1}&lng1=${lng1}&destino_id=${destinoId}`)
+  if (!res.ok) throw new Error('Error al calcular distancia')
+  return res.json()
+}
+
+export async function getTodosServicios() {
+  const res = await fetch(`${API_URL}/servicios`)
+  if (!res.ok) throw new Error('Error al cargar servicios')
+  return res.json()
+}

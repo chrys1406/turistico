@@ -471,13 +471,13 @@ export default function Mapa() {
     >
       {/* ── BARRA SUPERIOR ── */}
       <div
-        className="flex items-center justify-center md:justify-between px-3 md:px-8 py-3 gap-2 flex-wrap"
+        className="flex items-center justify-between px-3 md:px-8 py-3 gap-2"
         style={{
           background: "#1a1a2e",
           borderBottom: "1px solid rgba(255,255,255,0.08)",
         }}
       >
-        <div className="hidden md:flex items-center gap-2">
+        <div className="flex items-center gap-2">
           <MapPin size={16} className="text-amber-400" />
           <h1
             className="text-white font-black text-lg"

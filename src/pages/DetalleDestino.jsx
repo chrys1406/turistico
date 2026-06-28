@@ -378,22 +378,6 @@ export default function DetalleDestino() {
             </div>
 
             {/* CTA mapa */}
-            <Link
-              to={`/mapa?lat=${destino.lat}&lng=${destino.lng}&zoom=15`}
-              className="flex items-center justify-between p-5 rounded-2xl transition-all hover:-translate-y-1 hover:shadow-lg"
-              style={{
-                background: "#1a1a2e",
-                border: "1px solid rgba(255,255,255,0.05)",
-              }}
-            >
-              <div>
-                <p className="text-white font-bold text-sm">Ver en el mapa</p>
-                <p className="text-slate-400 text-xs mt-0.5">
-                  Mapa interactivo SIG
-                </p>
-              </div>
-              <ChevronRight size={20} color="#f59e0b" />
-            </Link>
           </div>
 
           {/* Columna principal — en móvil va abajo */}
@@ -453,13 +437,13 @@ export default function DetalleDestino() {
                 </MapContainer>
               </div>
               <div className="p-3 md:p-4">
-                <Link
-                  to={`/mapa?lat=${destino.lat}&lng=${destino.lng}&zoom=15`}
+                <a
+                  href={`/mapa?lat=${destino.lat}&lng=${destino.lng}&zoom=15`}
                   className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-bold transition-all hover:-translate-y-0.5"
                   style={{ background: "#1a1a2e", color: "#fff" }}
                 >
                   <MapPin size={14} /> Ver en mapa completo
-                </Link>
+                </a>
               </div>
             </div>
 

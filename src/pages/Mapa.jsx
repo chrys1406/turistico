@@ -467,20 +467,20 @@ export default function Mapa() {
   return (
     <div
       style={{ fontFamily: "'Inter', sans-serif" }}
-      className="h-screen flex flex-col pt-16 md:pt-20"
+      className="h-screen flex flex-col pt-20"
     >
       {/* ── BARRA SUPERIOR ── */}
       <div
-        className="flex items-center justify-between px-3 md:px-8 py-2 md:py-3 gap-2 overflow-x-auto"
+        className="flex items-center justify-center md:justify-between px-3 md:px-8 py-3 gap-2 flex-wrap"
         style={{
           background: "#1a1a2e",
           borderBottom: "1px solid rgba(255,255,255,0.08)",
         }}
       >
-        <div className="flex items-center gap-2">
+        <div className="hidden md:flex items-center gap-2">
           <MapPin size={16} className="text-amber-400" />
           <h1
-            className="text-white font-black text-lg hidden sm:block"
+            className="text-white font-black text-lg"
             style={{ fontFamily: "'Playfair Display', serif" }}
           >
             Mapa <span className="text-amber-400">Interactivo</span>

@@ -135,6 +135,14 @@ export default function Navbar() {
               {label}
             </Link>
           ))}
+          <Link
+            to="/mapa"
+            onClick={() => setMenuOpen(false)}
+            className="flex items-center justify-center gap-2 mt-2 px-4 py-3 rounded-xl text-sm font-bold"
+            style={{ background: "#f59e0b", color: "#fff" }}
+          >
+            <Map size={14} /> Ver Mapa
+          </Link>
         </div>
       )}
     </nav>

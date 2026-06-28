@@ -316,12 +316,6 @@ export default function Home() {
             })}
           </div>
 
-          <Link
-            to="/mapa"
-            className="inline-flex items-center gap-3 bg-slate-900 text-white font-semibold px-6 md:px-8 py-3 md:py-4 rounded-xl text-sm transition-all active:scale-95"
-          >
-            <MapPin size={16} /> Ver rutas en el mapa <ArrowRight size={15} />
-          </Link>
         </div>
 
         {/* ── CTA FINAL ── */}

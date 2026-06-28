@@ -498,7 +498,7 @@ export default function Mapa() {
             }}
           >
             <Route size={13} />
-            Calcular Ruta
+            <span className="hidden sm:inline">Calcular Ruta</span>
           </button>
 
           {/* Filtro categorías */}
@@ -517,7 +517,9 @@ export default function Mapa() {
               }}
             >
               <Filter size={13} />
-              {categoriaActiva === "Todos" ? "Categorías" : categoriaActiva}
+              <span className="hidden sm:inline">
+                {categoriaActiva === "Todos" ? "Categorías" : categoriaActiva}
+              </span>
             </button>
             {panelFiltros && (
               <div
@@ -564,7 +566,7 @@ export default function Mapa() {
               }}
             >
               <Layers size={13} />
-              {capa.label}
+              <span className="hidden sm:inline">{capa.label}</span>
             </button>
             {panelCapas && (
               <div
@@ -615,11 +617,13 @@ export default function Mapa() {
                 border: "1px solid rgba(255,255,255,0.1)",
               }}
             >
-              🍔{" "}
-              {categoriaServicio
-                ? SERVICIOS_OVERPASS.find((s) => s.id === categoriaServicio)
-                    ?.label
-                : "Servicios"}
+              🍔
+              <span className="hidden sm:inline">
+                {categoriaServicio
+                  ? SERVICIOS_OVERPASS.find((s) => s.id === categoriaServicio)
+                      ?.label
+                  : "Servicios"}
+              </span>
               {cargandoServicios && (
                 <Loader2 size={11} className="animate-spin ml-1" />
               )}
@@ -632,6 +636,7 @@ export default function Mapa() {
                   background: "#1e293b",
                   border: "1px solid rgba(255,255,255,0.1)",
                   minWidth: "220px",
+                  maxWidth: "calc(100vw - 16px)",
                 }}
               >
                 {/* Radio slider */}
@@ -799,7 +804,9 @@ export default function Mapa() {
             }}
           >
             <Navigation size={13} />
-            {ubicacionUser ? "Ubicado" : "Mi ubicación"}
+            <span className="hidden sm:inline">
+              {ubicacionUser ? "Ubicado" : "Mi ubicación"}
+            </span>
           </button>
         </div>
       </div>
@@ -807,7 +814,7 @@ export default function Mapa() {
       {/* ── PANEL DE RUTA ── */}
       {panelRuta && (
         <div
-          className="px-4 md:px-8 py-4 flex flex-wrap items-end gap-4"
+          className="px-4 md:px-8 py-4 flex flex-col sm:flex-row sm:flex-wrap sm:items-end gap-3"
           style={{
             background: "#0f172a",
             borderBottom: "1px solid rgba(255,255,255,0.08)",
@@ -1290,7 +1297,7 @@ export default function Mapa() {
               className="absolute bottom-4 left-4 right-4 lg:left-auto lg:right-4 lg:w-80 rounded-2xl overflow-hidden shadow-2xl z-[999]"
               style={{ border: "1px solid #e2e8f0", background: "#fff" }}
             >
-              <div className="p-4">
+              <div className="p-3 md:p-4">
                 <div className="flex items-start justify-between mb-2">
                   <span
                     className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase"
@@ -1314,10 +1321,10 @@ export default function Mapa() {
                 >
                   {destinoSeleccionado.nombre}
                 </h3>
-                <p className="text-slate-500 text-xs leading-relaxed mb-3">
+                <p className="text-slate-500 text-xs leading-relaxed mb-2 hidden sm:block">
                   {destinoSeleccionado.descripcion}
                 </p>
-                <div className="flex items-center gap-4 text-xs text-slate-400 mb-3">
+                <div className="flex items-center flex-wrap gap-2 text-xs text-slate-400 mb-3">
                   <span className="flex items-center gap-1">
                     <Star size={11} fill="#f59e0b" color="#f59e0b" />
                     <strong className="text-slate-700">

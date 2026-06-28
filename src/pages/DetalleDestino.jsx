@@ -2,29 +2,53 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import {
-  ArrowLeft, MapPin, Star, Clock, Navigation,
-  Share2, Heart, ChevronRight, Loader2,
+  ArrowLeft,
+  MapPin,
+  Star,
+  Clock,
+  Navigation,
+  Share2,
+  Heart,
+  ChevronRight,
+  Loader2,
 } from "lucide-react";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
-import { getDestino, getServiciosCercanos, getFotos, calcularDistancia } from "../services/api";
+import {
+  getDestino,
+  getServiciosCercanos,
+  getFotos,
+  calcularDistancia,
+} from "../services/api";
 import SubirFoto from "../components/SubirFoto";
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
-  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
-  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
+  iconRetinaUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
+  iconUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
+  shadowUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
 });
 
 function Img({ src, alt, className, style }) {
   const [err, setErr] = useState(false);
   return !src || err ? (
-    <div className={`${className} flex items-center justify-center bg-slate-100`} style={style}>
+    <div
+      className={`${className} flex items-center justify-center bg-slate-100`}
+      style={style}
+    >
       <MapPin size={32} className="text-slate-300" />
     </div>
   ) : (
-    <img src={src} alt={alt} className={className} style={style} onError={() => setErr(true)} />
+    <img
+      src={src}
+      alt={alt}
+      className={className}
+      style={style}
+      onError={() => setErr(true)}
+    />
   );
 }
 
@@ -42,7 +66,8 @@ export default function DetalleDestino() {
 
   useEffect(() => {
     const link = document.createElement("link");
-    link.href = "https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=Inter:wght@300;400;500;600;700&display=swap";
+    link.href =
+      "https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=Inter:wght@300;400;500;600;700&display=swap";
     link.rel = "stylesheet";
     document.head.appendChild(link);
   }, []);
@@ -77,13 +102,15 @@ export default function DetalleDestino() {
           .then((data) => setDistancia(data))
           .catch(() => setDistancia(null));
       },
-      () => setDistancia(null)
+      () => setDistancia(null),
     );
   }, [destino]);
 
   useEffect(() => {
     if (!destino) return;
-    fetch(`https://api.open-elevation.com/api/v1/lookup?locations=${destino.lat},${destino.lng}`)
+    fetch(
+      `https://api.open-elevation.com/api/v1/lookup?locations=${destino.lat},${destino.lng}`,
+    )
       .then((r) => r.json())
       .then((data) => setElevacion(data.results[0].elevation))
       .catch(() => setElevacion(null));
@@ -91,7 +118,9 @@ export default function DetalleDestino() {
 
   useEffect(() => {
     if (!destino) return;
-    fetch(`https://api.open-meteo.com/v1/forecast?latitude=${destino.lat}&longitude=${destino.lng}&current=temperature_2m,weathercode&timezone=America%2FLa_Paz`)
+    fetch(
+      `https://api.open-meteo.com/v1/forecast?latitude=${destino.lat}&longitude=${destino.lng}&current=temperature_2m,weathercode&timezone=America%2FLa_Paz`,
+    )
       .then((r) => r.json())
       .then((data) => setClima(data.current))
       .catch(() => setClima(null));
@@ -99,9 +128,16 @@ export default function DetalleDestino() {
 
   if (cargando) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "#f8f9fa" }}>
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ background: "#f8f9fa" }}
+      >
         <div className="flex flex-col items-center gap-3 text-slate-400">
-          <Loader2 size={32} className="animate-spin" style={{ color: "#f59e0b" }} />
+          <Loader2
+            size={32}
+            className="animate-spin"
+            style={{ color: "#f59e0b" }}
+          />
           <p className="text-sm font-medium">Cargando destino...</p>
         </div>
       </div>
@@ -110,10 +146,15 @@ export default function DetalleDestino() {
 
   if (error || !destino) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "#f8f9fa" }}>
+      <div
+        className="min-h-screen flex items-center justify-center px-4"
+        style={{ background: "#f8f9fa" }}
+      >
         <div className="text-center">
           <p className="text-red-500 font-bold mb-2">Destino no encontrado</p>
-          <Link to="/destinos" className="text-amber-500 font-bold">← Volver a destinos</Link>
+          <Link to="/destinos" className="text-amber-500 font-bold">
+            ← Volver a destinos
+          </Link>
         </div>
       </div>
     );
@@ -144,14 +185,24 @@ export default function DetalleDestino() {
   });
 
   return (
-    <div style={{ fontFamily: "'Inter', sans-serif", background: "#f8f9fa", minHeight: "100vh" }}>
-
+    <div
+      style={{
+        fontFamily: "'Inter', sans-serif",
+        background: "#f8f9fa",
+        minHeight: "100vh",
+      }}
+    >
       {/* ── HERO ── */}
       <div
         className="relative overflow-hidden"
-        style={{ background: "#1e293b", height: 'clamp(280px, 50vh, 500px)' }}
+        style={{ background: "#1e293b", height: "clamp(280px, 50vh, 500px)" }}
       >
-        <Img src={destino.imagen_url} alt={destino.nombre} className="w-full h-full object-cover" style={{}} />
+        <Img
+          src={destino.imagen_url}
+          alt={destino.nombre}
+          className="w-full h-full object-cover"
+          style={{}}
+        />
         <div className="absolute inset-0 bg-gradient-to-t from-[#0f172a] via-[#0f172a]/40 to-transparent" />
 
         {/* Botones top */}
@@ -159,7 +210,11 @@ export default function DetalleDestino() {
           <Link
             to="/destinos"
             className="flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm font-semibold backdrop-blur-sm"
-            style={{ background: "rgba(255,255,255,0.15)", color: "#fff", border: "1px solid rgba(255,255,255,0.2)" }}
+            style={{
+              background: "rgba(255,255,255,0.15)",
+              color: "#fff",
+              border: "1px solid rgba(255,255,255,0.2)",
+            }}
           >
             <ArrowLeft size={14} /> Volver
           </Link>
@@ -167,13 +222,23 @@ export default function DetalleDestino() {
             <button
               onClick={() => setFavorito(!favorito)}
               className="w-9 h-9 md:w-10 md:h-10 rounded-xl flex items-center justify-center backdrop-blur-sm"
-              style={{ background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.2)" }}
+              style={{
+                background: "rgba(255,255,255,0.15)",
+                border: "1px solid rgba(255,255,255,0.2)",
+              }}
             >
-              <Heart size={15} fill={favorito ? "#ef4444" : "none"} color={favorito ? "#ef4444" : "#fff"} />
+              <Heart
+                size={15}
+                fill={favorito ? "#ef4444" : "none"}
+                color={favorito ? "#ef4444" : "#fff"}
+              />
             </button>
             <button
               className="w-9 h-9 md:w-10 md:h-10 rounded-xl flex items-center justify-center backdrop-blur-sm"
-              style={{ background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.2)" }}
+              style={{
+                background: "rgba(255,255,255,0.15)",
+                border: "1px solid rgba(255,255,255,0.2)",
+              }}
             >
               <Share2 size={15} color="#fff" />
             </button>
@@ -205,17 +270,29 @@ export default function DetalleDestino() {
               <Clock size={12} /> {destino.tiempo_visita}
             </span>
             {elevacion && (
-              <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: "rgba(255,255,255,0.15)", color: "#fff" }}>
+              <span
+                className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold"
+                style={{ background: "rgba(255,255,255,0.15)", color: "#fff" }}
+              >
                 ⛰️ {elevacion.toLocaleString()} msnm
               </span>
             )}
             {clima && (
-              <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: "rgba(255,255,255,0.15)", color: "#fff" }}>
+              <span
+                className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold"
+                style={{ background: "rgba(255,255,255,0.15)", color: "#fff" }}
+              >
                 {emojiClima(clima.weathercode)} {clima.temperature_2m}°C
               </span>
             )}
             {distancia && (
-              <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: "rgba(245,158,11,0.25)", color: "#f59e0b" }}>
+              <span
+                className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold"
+                style={{
+                  background: "rgba(245,158,11,0.25)",
+                  color: "#f59e0b",
+                }}
+              >
                 <MapPin size={11} /> {distancia.distancia_km} km de ti
               </span>
             )}
@@ -225,58 +302,95 @@ export default function DetalleDestino() {
 
       {/* ── CONTENIDO ── */}
       <div className="max-w-[1100px] mx-auto px-4 md:px-8 py-6 md:py-12">
-
         {/* En móvil: columna lateral va PRIMERO (info rápida arriba) */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
-
           {/* Columna lateral — en móvil va arriba */}
           <div className="flex flex-col gap-4 md:gap-6 lg:order-2">
-
             {/* Info rápida */}
-            <div className="bg-white rounded-2xl p-5 md:p-6" style={{ border: "1px solid #f1f5f9" }}>
-              <h3 className="text-base md:text-lg font-black text-slate-900 mb-4" style={{ fontFamily: "'Playfair Display', serif" }}>
+            <div
+              className="bg-white rounded-2xl p-5 md:p-6"
+              style={{ border: "1px solid #f1f5f9" }}
+            >
+              <h3
+                className="text-base md:text-lg font-black text-slate-900 mb-4"
+                style={{ fontFamily: "'Playfair Display', serif" }}
+              >
                 Información
               </h3>
               {[
                 { label: "Entrada", valor: destino.entrada },
                 { label: "Horario", valor: destino.horario },
                 { label: "Duración", valor: destino.tiempo_visita },
-                { label: "Altitud", valor: elevacion ? `${elevacion.toLocaleString()} msnm` : destino.altitud },
-                { label: "Clima ahora", valor: clima ? `${emojiClima(clima.weathercode)} ${clima.temperature_2m}°C` : "Consultando..." },
+                {
+                  label: "Altitud",
+                  valor: elevacion
+                    ? `${elevacion.toLocaleString()} msnm`
+                    : destino.altitud,
+                },
+                {
+                  label: "Clima ahora",
+                  valor: clima
+                    ? `${emojiClima(clima.weathercode)} ${clima.temperature_2m}°C`
+                    : "Consultando...",
+                },
               ].map((item, i) => (
                 <div
                   key={i}
                   className="flex items-center justify-between py-2.5 md:py-3"
                   style={{ borderBottom: i < 4 ? "1px solid #f1f5f9" : "none" }}
                 >
-                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{item.label}</span>
-                  <span className="text-xs md:text-sm font-bold text-slate-800 text-right ml-2">{item.valor}</span>
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                    {item.label}
+                  </span>
+                  <span className="text-xs md:text-sm font-bold text-slate-800 text-right ml-2">
+                    {item.valor}
+                  </span>
                 </div>
               ))}
             </div>
 
             {/* Rating */}
-            <div className="rounded-2xl p-5 md:p-6 text-center" style={{ background: color }}>
-              <div className="text-5xl md:text-6xl font-black text-white mb-1" style={{ fontFamily: "'Playfair Display', serif" }}>
+            <div
+              className="rounded-2xl p-5 md:p-6 text-center"
+              style={{ background: color }}
+            >
+              <div
+                className="text-5xl md:text-6xl font-black text-white mb-1"
+                style={{ fontFamily: "'Playfair Display', serif" }}
+              >
                 {destino.rating}
               </div>
               <div className="flex justify-center gap-1 mb-2">
                 {[1, 2, 3, 4, 5].map((i) => (
-                  <Star key={i} size={14} fill={i <= Math.round(destino.rating) ? "#fff" : "transparent"} color="#fff" />
+                  <Star
+                    key={i}
+                    size={14}
+                    fill={
+                      i <= Math.round(destino.rating) ? "#fff" : "transparent"
+                    }
+                    color="#fff"
+                  />
                 ))}
               </div>
-              <p className="text-white/80 text-xs font-semibold">Calificación de visitantes</p>
+              <p className="text-white/80 text-xs font-semibold">
+                Calificación de visitantes
+              </p>
             </div>
 
             {/* CTA mapa */}
             <Link
-              to="/mapa"
-              className="flex items-center justify-between p-4 md:p-5 rounded-2xl"
-              style={{ background: "#1a1a2e", border: "1px solid rgba(255,255,255,0.05)" }}
+              to={`/mapa?lat=${destino.lat}&lng=${destino.lng}&zoom=15`}
+              className="flex items-center justify-between p-5 rounded-2xl transition-all hover:-translate-y-1 hover:shadow-lg"
+              style={{
+                background: "#1a1a2e",
+                border: "1px solid rgba(255,255,255,0.05)",
+              }}
             >
               <div>
                 <p className="text-white font-bold text-sm">Ver en el mapa</p>
-                <p className="text-slate-400 text-xs mt-0.5">Mapa interactivo SIG</p>
+                <p className="text-slate-400 text-xs mt-0.5">
+                  Mapa interactivo SIG
+                </p>
               </div>
               <ChevronRight size={20} color="#f59e0b" />
             </Link>
@@ -284,20 +398,35 @@ export default function DetalleDestino() {
 
           {/* Columna principal — en móvil va abajo */}
           <div className="lg:col-span-2 flex flex-col gap-6 md:gap-8 lg:order-1">
-
             {/* Sobre este lugar */}
-            <div className="bg-white rounded-2xl p-5 md:p-8" style={{ border: "1px solid #f1f5f9" }}>
-              <h2 className="text-xl md:text-2xl font-black text-slate-900 mb-3 md:mb-4" style={{ fontFamily: "'Playfair Display', serif" }}>
+            <div
+              className="bg-white rounded-2xl p-5 md:p-8"
+              style={{ border: "1px solid #f1f5f9" }}
+            >
+              <h2
+                className="text-xl md:text-2xl font-black text-slate-900 mb-3 md:mb-4"
+                style={{ fontFamily: "'Playfair Display', serif" }}
+              >
                 Sobre este lugar
               </h2>
-              <p className="text-slate-600 leading-relaxed mb-3 md:mb-4 text-sm md:text-base">{destino.descripcion}</p>
-              <p className="text-slate-500 leading-relaxed text-xs md:text-sm">{destino.descripcion_detalle}</p>
+              <p className="text-slate-600 leading-relaxed mb-3 md:mb-4 text-sm md:text-base">
+                {destino.descripcion}
+              </p>
+              <p className="text-slate-500 leading-relaxed text-xs md:text-sm">
+                {destino.descripcion_detalle}
+              </p>
             </div>
 
             {/* Mapa mini */}
-            <div className="bg-white rounded-2xl overflow-hidden" style={{ border: "1px solid #f1f5f9" }}>
+            <div
+              className="bg-white rounded-2xl overflow-hidden"
+              style={{ border: "1px solid #f1f5f9" }}
+            >
               <div className="p-4 md:p-6 pb-0">
-                <h2 className="text-xl md:text-2xl font-black text-slate-900 mb-1" style={{ fontFamily: "'Playfair Display', serif" }}>
+                <h2
+                  className="text-xl md:text-2xl font-black text-slate-900 mb-1"
+                  style={{ fontFamily: "'Playfair Display', serif" }}
+                >
                   Ubicación
                 </h2>
                 <p className="text-slate-400 text-xs mb-3 md:mb-4 font-mono">
@@ -312,16 +441,21 @@ export default function DetalleDestino() {
                   zoomControl={false}
                   scrollWheelZoom={false}
                 >
-                  <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="© OpenStreetMap" />
+                  <TileLayer
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution="© OpenStreetMap"
+                  />
                   <Marker position={coords} icon={iconoPersonalizado}>
-                    <Popup><strong>{destino.nombre}</strong></Popup>
+                    <Popup>
+                      <strong>{destino.nombre}</strong>
+                    </Popup>
                   </Marker>
                 </MapContainer>
               </div>
               <div className="p-3 md:p-4">
                 <Link
-                  to="/mapa"
-                  className="flex items-center justify-center gap-2 w-full py-2.5 md:py-3 rounded-xl text-sm font-bold"
+                  to={`/mapa?lat=${destino.lat}&lng=${destino.lng}&zoom=15`}
+                  className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-bold transition-all hover:-translate-y-0.5"
                   style={{ background: "#1a1a2e", color: "#fff" }}
                 >
                   <MapPin size={14} /> Ver en mapa completo
@@ -331,8 +465,14 @@ export default function DetalleDestino() {
 
             {/* Servicios cercanos */}
             {servicios.length > 0 && (
-              <div className="bg-white rounded-2xl p-5 md:p-8" style={{ border: "1px solid #f1f5f9" }}>
-                <h2 className="text-xl md:text-2xl font-black text-slate-900 mb-1" style={{ fontFamily: "'Playfair Display', serif" }}>
+              <div
+                className="bg-white rounded-2xl p-5 md:p-8"
+                style={{ border: "1px solid #f1f5f9" }}
+              >
+                <h2
+                  className="text-xl md:text-2xl font-black text-slate-900 mb-1"
+                  style={{ fontFamily: "'Playfair Display', serif" }}
+                >
                   Servicios cercanos
                 </h2>
                 <p className="text-slate-400 text-xs md:text-sm mb-4 md:mb-6">
@@ -340,22 +480,50 @@ export default function DetalleDestino() {
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                   {servicios.map((s) => {
-                    const iconos = { hotel: "🏨", restaurante: "🍽️", farmacia: "💊" };
-                    const colores = { hotel: "#3b82f6", restaurante: "#f59e0b", farmacia: "#10b981" };
+                    const iconos = {
+                      hotel: "🏨",
+                      restaurante: "🍽️",
+                      farmacia: "💊",
+                    };
+                    const colores = {
+                      hotel: "#3b82f6",
+                      restaurante: "#f59e0b",
+                      farmacia: "#10b981",
+                    };
                     return (
-                      <div key={s.id} className="flex items-start gap-3 p-3 md:p-4 rounded-xl" style={{ background: "#f8f9fa" }}>
-                        <div className="w-9 h-9 md:w-10 md:h-10 rounded-lg flex items-center justify-center text-base md:text-lg shrink-0" style={{ background: `${colores[s.tipo]}15` }}>
+                      <div
+                        key={s.id}
+                        className="flex items-start gap-3 p-3 md:p-4 rounded-xl"
+                        style={{ background: "#f8f9fa" }}
+                      >
+                        <div
+                          className="w-9 h-9 md:w-10 md:h-10 rounded-lg flex items-center justify-center text-base md:text-lg shrink-0"
+                          style={{ background: `${colores[s.tipo]}15` }}
+                        >
                           {iconos[s.tipo] || "📍"}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="font-bold text-xs md:text-sm text-slate-900 truncate">{s.nombre}</p>
-                          <p className="text-xs text-slate-400 capitalize">{s.tipo}</p>
-                          {s.direccion && s.direccion !== "Sin direccion registrada" && (
-                            <p className="text-xs text-slate-400 mt-0.5 truncate">{s.direccion}</p>
-                          )}
+                          <p className="font-bold text-xs md:text-sm text-slate-900 truncate">
+                            {s.nombre}
+                          </p>
+                          <p className="text-xs text-slate-400 capitalize">
+                            {s.tipo}
+                          </p>
+                          {s.direccion &&
+                            s.direccion !== "Sin direccion registrada" && (
+                              <p className="text-xs text-slate-400 mt-0.5 truncate">
+                                {s.direccion}
+                              </p>
+                            )}
                           <div className="flex items-center gap-2 mt-1">
-                            <span className="text-xs font-bold text-amber-500">★ {s.rating}</span>
-                            {s.telefono && <span className="text-xs text-slate-400 truncate">· {s.telefono}</span>}
+                            <span className="text-xs font-bold text-amber-500">
+                              ★ {s.rating}
+                            </span>
+                            {s.telefono && (
+                              <span className="text-xs text-slate-400 truncate">
+                                · {s.telefono}
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -367,17 +535,33 @@ export default function DetalleDestino() {
 
             {/* Galería */}
             {fotos.length > 0 && (
-              <div className="bg-white rounded-2xl p-5 md:p-8" style={{ border: "1px solid #f1f5f9" }}>
-                <h2 className="text-xl md:text-2xl font-black text-slate-900 mb-1" style={{ fontFamily: "'Playfair Display', serif" }}>
+              <div
+                className="bg-white rounded-2xl p-5 md:p-8"
+                style={{ border: "1px solid #f1f5f9" }}
+              >
+                <h2
+                  className="text-xl md:text-2xl font-black text-slate-900 mb-1"
+                  style={{ fontFamily: "'Playfair Display', serif" }}
+                >
                   Fotos de viajeros
                 </h2>
                 <p className="text-slate-400 text-xs md:text-sm mb-4 md:mb-6">
-                  {fotos.length} {fotos.length === 1 ? "foto compartida" : "fotos compartidas"} por la comunidad
+                  {fotos.length}{" "}
+                  {fotos.length === 1 ? "foto compartida" : "fotos compartidas"}{" "}
+                  por la comunidad
                 </p>
                 <div className="grid grid-cols-3 gap-2 md:gap-3">
                   {fotos.map((f) => (
-                    <div key={f.id} className="aspect-square rounded-lg md:rounded-xl overflow-hidden" style={{ border: "1px solid #f1f5f9" }}>
-                      <img src={f.url} alt="Foto compartida por viajero" className="w-full h-full object-cover" />
+                    <div
+                      key={f.id}
+                      className="aspect-square rounded-lg md:rounded-xl overflow-hidden"
+                      style={{ border: "1px solid #f1f5f9" }}
+                    >
+                      <img
+                        src={f.url}
+                        alt="Foto compartida por viajero"
+                        className="w-full h-full object-cover"
+                      />
                     </div>
                   ))}
                 </div>

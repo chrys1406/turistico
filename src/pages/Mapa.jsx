@@ -22,6 +22,7 @@ import "leaflet/dist/leaflet.css";
 import "leaflet-routing-machine/dist/leaflet-routing-machine.css";
 import L from "leaflet";
 import "leaflet-routing-machine";
+import { useSearchParams, Link } from "react-router-dom";
 import { getDestinos } from "../services/api";
 
 delete L.Icon.Default.prototype._getIconUrl;
@@ -261,13 +262,20 @@ export default function Mapa() {
   const [sugerencias, setSugerencias] = useState([]);
   const [clickPendiente, setClickPendiente] = useState(null);
 
+  const [searchParams] = useSearchParams();
   const capa = CAPAS.find((c) => c.id === capaActiva);
 
   useEffect(() => {
     setCargando(true);
     setError(null);
     getDestinos(categoriaActiva)
-      .then((data) => setDestinos(data))
+      .then((data) => {
+        setDestinos(data);
+        // Si venimos de DetalleDestino, hacer zoom al lugar
+        const lat = parseFloat(searchParams.get("lat"));
+        const lng = parseFloat(searchParams.get("lng"));
+        if (lat && lng) setVolarA([lat, lng]);
+      })
       .catch((err) => setError(err.message))
       .finally(() => setCargando(false));
   }, [categoriaActiva]);
@@ -1355,13 +1363,13 @@ export default function Mapa() {
                   )}
                 </div>
                 <div className="flex gap-2">
-                  <a
-                    href={`/destinos/${destinoSeleccionado.id}`}
+                  <Link
+                    to={`/destinos/${destinoSeleccionado.id}`}
                     className="flex-1 block text-center text-xs font-bold py-2 rounded-lg"
                     style={{ background: "#1a1a2e", color: "#fff" }}
                   >
                     Ver detalle
-                  </a>
+                  </Link>
                   {panelRuta && (
                     <button
                       onClick={() => {

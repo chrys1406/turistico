@@ -89,6 +89,21 @@ const crearIcono = (color) =>
     popupAnchor: [0, -38],
   });
 
+const iconoNavegacion = L.divIcon({
+  className: "",
+  html: `
+    <div style="
+      width: 0; height: 0;
+      border-left: 12px solid transparent;
+      border-right: 12px solid transparent;
+      border-bottom: 28px solid #10b981;
+      filter: drop-shadow(0 2px 6px rgba(16,185,129,0.6));
+    "></div>
+  `,
+  iconSize: [24, 28],
+  iconAnchor: [12, 14],
+});
+
 const iconoOrigen = L.divIcon({
   className: "",
   html: `
@@ -175,12 +190,16 @@ function VolarA({ coords }) {
 }
 
 // Componente de routing con OSRM
-function ControlRuta({ origen, destino, onListo }) {
+function ControlRuta({ origen, destino, onListo, modoNavegacion }) {
   const map = useMap();
   const routingRef = useRef(null);
 
   useEffect(() => {
     if (!origen || !destino) return;
+    if (routingRef.current) {
+      map.removeControl(routingRef.current);
+      routingRef.current = null;
+    }
 
     // Limpiar ruta anterior
     if (routingRef.current) {
@@ -197,7 +216,13 @@ function ControlRuta({ origen, destino, onListo }) {
       addWaypoints: false,
       show: false, // ocultamos el panel de instrucciones feo por defecto
       lineOptions: {
-        styles: [{ color: "#dc2626", weight: 6, opacity: 0.9 }],
+        styles: [
+          {
+            color: modoNavegacion ? "#10b981" : "#dc2626",
+            weight: 6,
+            opacity: 0.9,
+          },
+        ],
       },
       router: L.Routing.osrmv1({
         serviceUrl: "https://router.project-osrm.org/route/v1",
@@ -221,7 +246,7 @@ function ControlRuta({ origen, destino, onListo }) {
         routingRef.current = null;
       }
     };
-  }, [origen, destino]);
+  }, [origen, destino, modoNavegacion]);
 
   return null;
 }
@@ -261,6 +286,10 @@ export default function Mapa() {
   const [calculandoRuta, setCalculandoRuta] = useState(false);
   const [sugerencias, setSugerencias] = useState([]);
   const [clickPendiente, setClickPendiente] = useState(null);
+
+  const [modoNavegacion, setModoNavegacion] = useState(false);
+  const [posicionNavegacion, setPosicionNavegacion] = useState(null);
+  const watchIdRef = useRef(null);
 
   const [searchParams] = useSearchParams();
   const capa = CAPAS.find((c) => c.id === capaActiva);
@@ -452,6 +481,28 @@ export default function Mapa() {
       setClimaDestino(data.current);
     } catch {
       setClimaDestino(null);
+    }
+  };
+
+  const iniciarNavegacion = () => {
+    setModoNavegacion(true);
+    watchIdRef.current = navigator.geolocation.watchPosition(
+      (pos) => {
+        const coords = [pos.coords.latitude, pos.coords.longitude];
+        setPosicionNavegacion(coords);
+        setVolarA(coords);
+      },
+      () => {},
+      { enableHighAccuracy: true, maximumAge: 2000, timeout: 5000 },
+    );
+  };
+
+  const finalizarNavegacion = () => {
+    setModoNavegacion(false);
+    setPosicionNavegacion(null);
+    if (watchIdRef.current !== null) {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+      watchIdRef.current = null;
     }
   };
 
@@ -954,6 +1005,7 @@ export default function Mapa() {
           </div>
 
           {/* Botones */}
+          {/* Botones */}
           <div className="flex gap-2">
             <button
               onClick={calcularRuta}
@@ -972,6 +1024,31 @@ export default function Mapa() {
               )}
               Calcular
             </button>
+
+            {/* Iniciar/Finalizar ruta */}
+            {!modoNavegacion ? (
+              <button
+                onClick={iniciarNavegacion}
+                disabled={!infoRuta}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all"
+                style={{
+                  background: infoRuta ? "#10b981" : "#1e3a2f",
+                  color: infoRuta ? "#fff" : "#4b7a63",
+                  cursor: infoRuta ? "pointer" : "not-allowed",
+                }}
+              >
+                🚀 Iniciar
+              </button>
+            ) : (
+              <button
+                onClick={finalizarNavegacion}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all"
+                style={{ background: "#ef4444", color: "#fff" }}
+              >
+                ⏹ Finalizar
+              </button>
+            )}
+
             {destinoRuta && (
               <button
                 onClick={limpiarRuta}
@@ -1109,6 +1186,7 @@ export default function Mapa() {
                 origen={origenRuta}
                 destino={destinoRuta}
                 onListo={(info) => setInfoRuta(info)}
+                modoNavegacion={modoNavegacion}
               />
             )}
 
@@ -1238,6 +1316,14 @@ export default function Mapa() {
               >
                 <Popup>
                   <strong>📍 Tu ubicación actual</strong>
+                </Popup>
+              </Marker>
+            )}
+            {/* Marcador navegación triángulo verde */}
+            {modoNavegacion && posicionNavegacion && (
+              <Marker position={posicionNavegacion} icon={iconoNavegacion}>
+                <Popup>
+                  <strong>🚀 Navegando...</strong>
                 </Popup>
               </Marker>
             )}
